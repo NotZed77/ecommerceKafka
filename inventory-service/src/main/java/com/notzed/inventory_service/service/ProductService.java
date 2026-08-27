@@ -25,7 +25,7 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final ModelMapper modelMapper;
-    private final KafkaTemplate<String, OrderStatus> kafkaTemplate;
+    private final KafkaTemplate<Long, OrderStatus> kafkaTemplate;
     private final OrdersKafkaConsumer inventoryKafkaConsumer;
 
     private static final String ORDER_STATUS_TOPIC = "order_status-updated";
@@ -46,7 +46,7 @@ public class ProductService {
 
     @Transactional
     public Double reduceStocks(OrderRequestDto event){
-        log.info("Reducing the stocks for id: {}", event.getOrderId());
+        log.info("Reducing the stocks for id: {}", event.getId());
         if(event.getItems() == null || event.getItems().isEmpty()){
             throw new RuntimeException("Order items can not be empty");
         }
@@ -60,7 +60,7 @@ public class ProductService {
                     .orElseThrow(() -> new RuntimeException("Product not found with id: "+ productId));
 
             if(product.getStock() < orderItemRequestDto.getQuantity()){
-                kafkaTemplate.send(ORDER_STATUS_TOPIC, event.getOrderId(), OrderStatus.OUT_OF_STOCK);
+                kafkaTemplate.send(ORDER_STATUS_TOPIC, event.getId(), OrderStatus.OUT_OF_STOCK);
                 throw new RuntimeException("Insufficient stock for product: "+ orderItemRequestDto.getProductId());
             }
 
@@ -74,7 +74,7 @@ public class ProductService {
             productRepository.save(product);
             totalPrice += product.getPrice() * quantity;
         }
-        kafkaTemplate.send(ORDER_STATUS_TOPIC, event.getOrderId(), OrderStatus.FULFILLED);
+        kafkaTemplate.send(ORDER_STATUS_TOPIC, event.getId(), OrderStatus.FULFILLED);
 
         return totalPrice;
     }

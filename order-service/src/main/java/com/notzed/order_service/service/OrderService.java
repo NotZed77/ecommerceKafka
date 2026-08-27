@@ -1,5 +1,6 @@
 package com.notzed.order_service.service;
 
+import com.notzed.order_service.client.InventoryOpenFeignClient;
 import com.notzed.order_service.dto.OrderRequestDto;
 import com.notzed.order_service.entity.Order;
 import com.notzed.order_service.entity.OrderItem;
@@ -32,6 +33,7 @@ public class OrderService {
     private final ModelMapper modelMapper;
     private final KafkaTemplate<String, OrderCreatedEvent> kafkaTemplate;
     private final KafkaTemplate<String, OrderStatusUpdatedEvent> kafkaTemplate2;
+    private final InventoryOpenFeignClient inventoryOpenFeignClient;
 
     public List<OrderRequestDto> getAllOrders(){
         log.info("Fetching all orders");
@@ -47,13 +49,13 @@ public class OrderService {
     }
 
     public void createNewOrder(OrderRequestDto orderRequestDto){
+        Double totalPrice = reduceStocks(orderRequestDto);
         Order order = modelMapper.map(orderRequestDto, Order.class);
         log.info("Calling the createOrder Method");
 
-        double totalPrice = 0.0;
         for(OrderItem item: order.getItems()){
             item.setOrder(order);
-            totalPrice += order.getTotalPrice() * item.getQuantity();
+            totalPrice += item.getPrice() * item.getQuantity();
         }
 
         order.setTotalPrice(totalPrice);
@@ -62,6 +64,10 @@ public class OrderService {
 
         OrderCreatedEvent orderCreatedEvent = modelMapper.map(savedOrder, OrderCreatedEvent.class);
         kafkaTemplate.send(KAFKA_ORDER_CREATED_TOPIC, orderCreatedEvent.getOrderId(), orderCreatedEvent);
+    }
+
+    private Double reduceStocks(OrderRequestDto orderRequestDto) {
+        return inventoryOpenFeignClient.reduceStocks(orderRequestDto);
     }
 
     @Transactional

@@ -22,7 +22,7 @@ public class Order {
 
     private OrderStatus orderStatus;
 
-    private Double totalPrice;
+    private double totalPrice;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items;

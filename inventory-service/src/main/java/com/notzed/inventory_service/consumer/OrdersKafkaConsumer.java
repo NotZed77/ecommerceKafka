@@ -9,10 +9,7 @@ import org.springframework.kafka.annotation.KafkaListener;
 
 @Slf4j
 @Configuration
-@RequiredArgsConstructor
 public class OrdersKafkaConsumer {
-
-    private final ProductService productService;
 
     @KafkaListener(topics = "order-created-topic")
     public void handleOrderCreatedTopic(OrderStatusUpdatedEvent orderStatusUpdatedEvent){

@@ -5,17 +5,19 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Data
 @Getter
 @Setter
 public class OrderRequestDto {
-    private String orderId;
+    private Long id;
     private List<OrderItemRequestDto> items;
+    private Integer totalPrice;
 
-    public OrderRequestDto(String orderId, List<OrderItemRequestDto> items){
-        this.orderId = orderId;
+    public OrderRequestDto(Long id, List<OrderItemRequestDto> items){
+        this.id = id;
         this.items = items;
     }
 }
